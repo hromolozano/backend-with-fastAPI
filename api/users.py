@@ -1,8 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
 
+# body example
+# {
+#   "name":"Hector",
+#   "surname":"Lozano",
+#   "id":2
+# }
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class Users(BaseModel):  #Crea clase con BaseModel para poder decirle que argumentos debe llevar al inicar el objeto Users
     name:str
@@ -11,31 +19,35 @@ class Users(BaseModel):  #Crea clase con BaseModel para poder decirle que argume
 
 users_fake_db = [Users(name="Héctor",surname="Romo", id =1)] #esto podría representar la base de datos
 
+@app.get("/")   
+async def users():
+    return "Bienvenido!"
 
 @app.get("/users")   
 async def users():
     return users_fake_db
 
 #QUERY
-@app.get("/user/") # parametro de path, cuando hay parametros que no van en esta url se les llama parámetro de query con /?{parameter}=
+@app.get("/user/") #  cuando hay parametros que no van en esta url se les llama parámetro de query con /?{parameter}=
 async def user(id:int):  # se pueden hacer 2 funcines una para que acepte el parametro id por path y otra para que tmb lo haga por query
     return search_user(id)
 
 #PATH
-@app.get("/user/{id}")
+@app.get("/user/{id}") #parametro de path, cuando el parámetro va en la url
 async def user(id:int):
     return search_user(id)
 
-#POST
-@app.post("/user/")
+#POST, para crear usuario
+@app.post("/user/", status_code=201) #status code 201 status creado
 async def user(user: Users):
     if type(search_user(user.id)) == Users:
-        return {"error":"El usuario ya existe"}
+        raise HTTPException(status_code=204, detail="El usuario ya existe")
+        #return {"error":"El usuario ya existe"}
     else:
         users_fake_db.append(user)
         return {"status":"succeeded", "message":"El usuario se ha agregado con exito"}
 
-#PUT
+#PUT, actualizar o modificar usuario
 @app.put("/user/")
 async def user(user: Users):
     found = False
