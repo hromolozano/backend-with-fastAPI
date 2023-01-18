@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 
@@ -9,8 +9,9 @@ from fastapi.staticfiles import StaticFiles
 #   "id":2
 # }
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+router = APIRouter(prefix="/users", tags=["users"])
+
+router.mount("/static", StaticFiles(directory="static"), name="static") #Nonta la imagen del archivo static/images
 
 class Users(BaseModel):  #Crea clase con BaseModel para poder decirle que argumentos debe llevar al inicar el objeto Users
     name:str
@@ -19,26 +20,22 @@ class Users(BaseModel):  #Crea clase con BaseModel para poder decirle que argume
 
 users_fake_db = [Users(name="Héctor",surname="Romo", id =1)] #esto podría representar la base de datos
 
-@app.get("/")   
-async def users():
-    return "Bienvenido!"
-
-@app.get("/users")   
+@router.get("/")   
 async def users():
     return users_fake_db
 
 #QUERY
-@app.get("/user/") #  cuando hay parametros que no van en esta url se les llama parámetro de query con /?{parameter}=
+@router.get("/user/") #  cuando hay parametros que no van en esta url se les llama parámetro de query con /?{parameter}=
 async def user(id:int):  # se pueden hacer 2 funcines una para que acepte el parametro id por path y otra para que tmb lo haga por query
     return search_user(id)
 
 #PATH
-@app.get("/user/{id}") #parametro de path, cuando el parámetro va en la url
+@router.get("/user/{id}") #parametro de path, cuando el parámetro va en la url
 async def user(id:int):
     return search_user(id)
 
 #POST, para crear usuario
-@app.post("/user/", status_code=201) #status code 201 status creado
+@router.post("/user/", status_code=201) #status code 201 status creado
 async def user(user: Users):
     if type(search_user(user.id)) == Users:
         raise HTTPException(status_code=204, detail="El usuario ya existe")
@@ -48,7 +45,7 @@ async def user(user: Users):
         return {"status":"succeeded", "message":"El usuario se ha agregado con exito"}
 
 #PUT, actualizar o modificar usuario
-@app.put("/user/")
+@router.put("/user/")
 async def user(user: Users):
     found = False
     for index, saved_user in enumerate(users_fake_db):
@@ -61,7 +58,7 @@ async def user(user: Users):
         return user
 
 #DELETE
-@app.delete("/user/{id}")
+@router.delete("/user/{id}")
 async def user(id:int):
     found = False
     for index, saved_user in enumerate(users_fake_db):
