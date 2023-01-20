@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.staticfiles import StaticFiles
 from db.models.user import Users
 from db.client import db_client
-from db.schemas import user
+from db.schemas import user_schema
 
 
 router = APIRouter(prefix="/userdb", tags=["userdb"])
